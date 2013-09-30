@@ -69,16 +69,19 @@ def do_part_download(args):
             s += len(data)
         t2 = time.time() - t1
         os.close(fd)
+        conn.close()
         s = s / 1024 / 1024.
         logger.debug("Downloaded %0.2fM in %0.2fs at %0.2fMBps" % (s, t2, s/t2))
     except Exception, err:
         logger.debug("Retry request %d of max %d times" % (current_tries, max_tries))
+        os.close(fd)
+        conn.close()
         if (current_tries > max_tries):
             logger.error(err)
         else:
             time.sleep(3)
             current_tries += 1
-            do_part_download(bucket_name, key_name, fname, min_byte, max_byte, split, secure, max_tries, current_tries)
+            do_part_download([bucket_name, key_name, fname, min_byte, max_byte, split, secure, max_tries, current_tries])
 
 def gen_byte_ranges(size, num_parts):
     part_size = int(ceil(1. * size / num_parts))
@@ -113,7 +116,14 @@ def main(src, dest, num_processes=2, split=32, force=False, verbose=False, quiet
     conn = boto.connect_s3()
     conn.is_secure = secure
     resp = conn.make_request("HEAD", bucket=bucket, key=key)
-    size = int(resp.getheader("content-length"))
+    content_length = resp.getheader("content-length")
+    if content_length == None:
+        resp = conn.make_request("HEAD", bucket=bucket, key=key)
+        content_length = resp.getheader("content-length")
+        if content_length == None:
+            logger.error("Invalid content length was returned '%s'" % content_length)
+    
+    size = int(content_length)
     logger.debug("Got headers: %s" % resp.getheaders())
 
     # Skipping multipart if file is less than 1mb

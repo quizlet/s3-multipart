@@ -86,7 +86,7 @@ def do_part_upload(args):
         else:
             time.sleep(3)
             current_tries += 1
-            do_part_download(bucket_name, mpu_id, fname, i, start, size, secure, max_tries, current_tries)
+            do_part_download([bucket_name, mpu_id, fname, i, start, size, secure, max_tries, current_tries])
 
 def main(src, dest, num_processes=2, split=50, force=False, reduced_redundancy=False, verbose=False, quiet=False, secure=True, max_tries=5):
     # Check that dest is a valid S3 url
