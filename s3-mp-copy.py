@@ -21,7 +21,7 @@ parser.add_argument("-np", "--num-processes", help="Number of processors to use"
 parser.add_argument("-f", "--force", help="Overwrite an existing S3 key",
         action="store_true")
 parser.add_argument("-s", "--split", help="Split size, in Mb", type=int, default=50)
-parser.add_argument("-rrs", "--reduced-redundancy", help="Use reduced redundancy storage. Default is standard.", 
+parser.add_argument("-rrs", "--reduced-redundancy", help="Use reduced redundancy storage. Default is standard.",
         default=False,  action="store_true")
 parser.add_argument("-v", "--verbose", help="Be more verbose", default=False, action="store_true")
 
@@ -41,7 +41,7 @@ def do_part_copy(args):
                  function definition.
 
                  The arguments are: S3 src bucket name, S3 key name, S3 dest
-                 bucket_name, MultiPartUpload id, the part number, 
+                 bucket_name, MultiPartUpload id, the part number,
                  part start position, part stop position
     """
     # Multiprocessing args lameness
@@ -84,7 +84,7 @@ def main(src, dest, num_processes=2, split=50, force=False, reduced_redundancy=F
     s3 = boto.connect_s3(calling_format=OrdinaryCallingFormat())
     dest_bucket = s3.lookup( dest_bucket_name )
     dest_key    = dest_bucket.get_key( dest_key_name )
-    
+
     # See if we're overwriting an existing key
     if dest_key is not None:
         if not force:
@@ -113,7 +113,7 @@ def main(src, dest, num_processes=2, split=50, force=False, reduced_redundancy=F
     mpu = dest_bucket.initiate_multipart_upload( dest_key_name, reduced_redundancy=reduced_redundancy)
     logger.info("Initialized copy: %s" % mpu.id)
 
-    # Generate arguments for invocations of do_part_copy 
+    # Generate arguments for invocations of do_part_copy
     def gen_args(num_parts):
         cur_pos = 0
         for i in range(num_parts):
