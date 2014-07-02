@@ -23,7 +23,7 @@ parser.add_argument("--insecure", dest='secure', help="Use HTTP for connection",
         default=True, action="store_false")
 parser.add_argument("-t", "--max-tries", help="Max allowed retries for http timeout", type=int, default=5)
 parser.add_argument("-v", "--verbose", help="Be more verbose", default=False, action="store_true")
-parser.add_argument("-q", "--quiet", help="Be less verbose (for use in cron jobs)", 
+parser.add_argument("-q", "--quiet", help="Be less verbose (for use in cron jobs)",
         default=False, action="store_true")
 
 logger = logging.getLogger("s3-mp-download")
@@ -82,7 +82,7 @@ def do_part_download(args):
         else:
             time.sleep(3)
             current_tries += 1
-            do_part_download([bucket_name, key_name, fname, min_byte, max_byte, split, secure, max_tries, current_tries])
+            do_part_download((bucket_name, key_name, fname, min_byte, max_byte, split, secure, max_tries, current_tries))
 
 def gen_byte_ranges(size, num_parts):
     part_size = int(ceil(1. * size / num_parts))
@@ -143,7 +143,7 @@ def main(src, dest, num_processes=2, split=32, force=False, verbose=False, quiet
         # Touch the file
         fd = os.open(dest, os.O_CREAT)
         os.close(fd)
-    
+
         size_mb = size / 1024 / 1024
         num_parts = (size_mb+(-size_mb%split))//split
 
