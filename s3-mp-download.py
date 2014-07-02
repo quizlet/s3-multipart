@@ -8,6 +8,7 @@ import time
 import urlparse
 
 import boto
+from boto.s3.connection import OrdinaryCallingFormat
 
 parser = argparse.ArgumentParser(description="Download a file from S3 in parallel",
         prog="s3-mp-download")
@@ -44,7 +45,7 @@ def do_part_download(args):
                  chunk size, and part number
     """
     bucket_name, key_name, fname, min_byte, max_byte, split, secure, max_tries, current_tries = args
-    conn = boto.connect_s3()
+    conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
     conn.is_secure = secure
 
     # Make the S3 request
@@ -96,6 +97,10 @@ def main(src, dest, num_processes=2, split=32, force=False, verbose=False, quiet
         raise ValueError("'%s' is not an S3 url" % src)
 
     # Check that dest does not exist
+    if os.path.isdir(dest):
+        filename = split_rs.path.split('/')[-1]
+        dest = os.path.join(dest, filename)
+
     if os.path.exists(dest):
         if force:
             os.remove(dest)
@@ -104,21 +109,21 @@ def main(src, dest, num_processes=2, split=32, force=False, verbose=False, quiet
                              " overwrite" % dest)
 
     # Split out the bucket and the key
-    s3 = boto.connect_s3()
+    s3 = boto.connect_s3(calling_format=OrdinaryCallingFormat())
     s3.is_secure = secure
     logger.debug("split_rs: %s" % str(split_rs))
     bucket = s3.lookup(split_rs.netloc)
     if bucket == None:
-        raise ValueError("Bucket '%s' does not exist." % split_rs.netloc)
+        raise ValueError("'%s' is not a valid bucket" % split_rs.netloc)
     key = bucket.get_key(split_rs.path)
+    if key is None:
+      raise ValueError("'%s' does not exist." % split_rs.path)
 
     # Determine the total size and calculate byte ranges
-    conn = boto.connect_s3()
-    conn.is_secure = secure
-    resp = conn.make_request("HEAD", bucket=bucket, key=key)
+    resp = s3.make_request("HEAD", bucket=bucket, key=key)
     content_length = resp.getheader("content-length")
     if content_length == None:
-        resp = conn.make_request("HEAD", bucket=bucket, key=key)
+        resp = s3.make_request("HEAD", bucket=bucket, key=key)
         content_length = resp.getheader("content-length")
         if content_length == None:
             logger.error("Invalid content length was returned '%s'" % content_length)
@@ -131,8 +136,9 @@ def main(src, dest, num_processes=2, split=32, force=False, verbose=False, quiet
         t1 = time.time()
         key.get_contents_to_filename(dest)
         t2 = time.time() - t1
-        log.info("Finished single-part download of %0.2fM in %0.2fs (%0.2fMBps)" %
-                (size, t2, size/t2))
+        size_mb = size / 1024 / 1024
+        logger.info("Finished single-part download of %0.2fM in %0.2fs (%0.2fMBps)" %
+                (size_mb, t2, size_mb/t2))
     else:
         # Touch the file
         fd = os.open(dest, os.O_CREAT)
@@ -161,7 +167,6 @@ def main(src, dest, num_processes=2, split=32, force=False, verbose=False, quiet
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
     args = parser.parse_args()
-    print args
     arg_dict = vars(args)
     if arg_dict['quiet'] == True:
         logger.setLevel(logging.WARNING)
