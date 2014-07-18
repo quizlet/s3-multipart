@@ -133,9 +133,9 @@ def main(src, dest, num_processes=2, split=50, force=False, reduced_redundancy=F
 
     # Generate arguments for invocations of do_part_upload
     def gen_args(num_parts, fold_last):
-        for i in range(num_parts+1):
+        for i in range(num_parts):
             part_start = part_size*i
-            if i == (num_parts-1) and fold_last is True:
+            if i == num_parts and fold_last is True:
                 yield (bucket.name, mpu.id, src.name, i, part_start, part_size*2, secure, max_tries, 0)
                 break
             else:
