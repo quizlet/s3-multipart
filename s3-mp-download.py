@@ -8,7 +8,6 @@ import time
 import urlparse
 
 import boto
-from boto.s3.connection import OrdinaryCallingFormat
 
 parser = argparse.ArgumentParser(description="Download a file from S3 in parallel",
         prog="s3-mp-download")
@@ -45,7 +44,7 @@ def do_part_download(args):
                  chunk size, and part number
     """
     bucket_name, key_name, fname, min_byte, max_byte, split, secure, max_tries, current_tries = args
-    conn = boto.connect_s3(calling_format=OrdinaryCallingFormat())
+    conn = boto.connect_s3()
     conn.is_secure = secure
 
     # Make the S3 request
@@ -74,7 +73,7 @@ def do_part_download(args):
         s = s / 1024 / 1024.
         logger.debug("Downloaded %0.2fM in %0.2fs at %0.2fMBps" % (s, t2, s/t2))
     except Exception, err:
-        logger.debug("Retry request %d of max %d times" % (current_tries, max_tries))
+        logger.debug("Retry request %d of max %d times (%s)" % (current_tries, max_tries, err))
         os.close(fd)
         conn.close()
         if (current_tries > max_tries):
@@ -109,7 +108,7 @@ def main(src, dest, num_processes=2, split=32, force=False, verbose=False, quiet
                              " overwrite" % dest)
 
     # Split out the bucket and the key
-    s3 = boto.connect_s3(calling_format=OrdinaryCallingFormat())
+    s3 = boto.connect_s3()
     s3.is_secure = secure
     logger.debug("split_rs: %s" % str(split_rs))
     bucket = s3.lookup(split_rs.netloc)

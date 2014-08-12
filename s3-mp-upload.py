@@ -8,7 +8,6 @@ import time
 import urlparse
 
 import boto
-from boto.s3.connection import OrdinaryCallingFormat
 
 parser = argparse.ArgumentParser(description="Transfer large files to S3",
         prog="s3-mp-upload")
@@ -49,7 +48,7 @@ def do_part_upload(args):
     logger.debug("do_part_upload got args: %s" % (args,))
 
     # Connect to S3, get the MultiPartUpload
-    s3 = boto.connect_s3(calling_format=OrdinaryCallingFormat())
+    s3 = boto.connect_s3()
     s3.is_secure = secure
     bucket = s3.lookup(bucket_name)
     mpu = None
@@ -95,7 +94,7 @@ def main(src, dest, num_processes=2, split=50, force=False, reduced_redundancy=F
     if split_rs.scheme != "s3":
         raise ValueError("'%s' is not an S3 url" % dest)
 
-    s3 = boto.connect_s3(calling_format=OrdinaryCallingFormat())
+    s3 = boto.connect_s3()
     s3.is_secure = secure
     bucket = s3.lookup(split_rs.netloc)
     if bucket == None:
